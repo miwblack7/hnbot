@@ -68,14 +68,11 @@ def webhook():
     message = update.get("message")
     if message:
         chat_id = message["chat"]["id"]
-        chat_type = message["chat"]["type"]  # private / group / supergroup
         text = message.get("text", "")
+        reply_text = f"دریافت شد: {text}"
+        send_message_async(chat_id, reply_text)
 
-        if chat_type == "private":  # فقط چت خصوصی
-            reply_text = f"سلام! شما گفتید: {text}"
-            send_message_async(chat_id, reply_text)
-
-    return jsonify(ok=True)
+    return jsonify(ok=True)  # پاسخ فوری به تلگرام
 
 @app.route("/reset-webhook", methods=["POST"])
 def reset_webhook_route():
