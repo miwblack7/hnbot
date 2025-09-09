@@ -46,15 +46,18 @@ def send_message(chat_id, text):
 def send_panel(chat_id):
     keyboard = {
         "inline_keyboard": [
-            [{"text": "❌ بستن", "callback_data": "close_panel"}]
+             [{"text": " ", "callback_data": "noop"}],  # فاصله بالا
+             [{"text": "❌ بستن", "callback_data": "close_panel"}],
+             [{"text": " ", "callback_data": "noop"}],  # فاصله پایین
         ]
     }
+    panel_text = "\n\n\n" + "پنل مدیریت" + "\n\n\n"  # چند خط خالی برای ایجاد فاصله
     try:
         resp = requests.post(
             f"{TELEGRAM_API}/sendMessage",
             json={
                 "chat_id": chat_id,
-                "text": "پنل مدیریت",
+                "text": panel_text,
                 "reply_markup": keyboard
             }
         )
