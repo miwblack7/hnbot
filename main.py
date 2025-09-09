@@ -31,6 +31,38 @@ def send_message_async(chat_id, text):
             logger.exception("Failed to send message: %s", e)
     Thread(target=task).start()
 
+# ذخیره پیام‌های ارسال شده بات (برای هر کاربر جدا)
+user_messages = {}  # chat_id : [message_id1, message_id2, ...]
+
+# ====== ارسال پیام آسنکرون و ذخیره ID ======
+def send_message(chat_id, text):
+    def task():
+        try:
+            resp = requests.post(
+                f"{TELEGRAM_API}/sendMessage",
+                json={"chat_id": chat_id, "text": text}
+            )
+            if resp.ok:
+                msg_id = resp.json()["result"]["message_id"]
+                user_messages.setdefault(chat_id, []).append(msg_id)
+        except Exception as e:
+            logger.exception("Failed to send message: %s", e)
+    Thread(target=task).start()
+
+# ====== حذف آخرین n پیام بات ======
+def delete_last_messages(chat_id, count=5):
+    last_msgs = user_messages.get(chat_id, [])[-count:]
+    for msg_id in last_msgs:
+        try:
+            requests.post(
+                f"{TELEGRAM_API}/deleteMessage",
+                json={"chat_id": chat_id, "message_id": msg_id}
+            )
+        except Exception as e:
+            logger.exception("Failed to delete message: %s", e)
+    # پاک کردن از لیست
+    user_messages[chat_id] = user_messages.get(chat_id, [])[:-count]
+
 # ====== تابع ریست وبهوک ======
 def reset_webhook():
     base_url = os.environ.get("RENDER_EXTERNAL_URL")
@@ -72,17 +104,11 @@ def webhook():
         message_id = message["message_id"]
         text = message.get("text", "")
 
-        # دستور حذف پیام ها
         if text == "حذف پیام ها":
-            try:
-                requests.post(
-                    f"{TELEGRAM_API}/deleteMessage",
-                    json={"chat_id": chat_id, "message_id": message_id}
-                )
-            except Exception as e:
-                logger.exception("Failed to delete message: %s", e)
+            delete_last_messages(chat_id, count=5)
+            send_message(chat_id, "آخرین پیام‌ها حذف شدند ✅")
         else:
-            send_message_async(chat_id, f"دریافت شد: {text}")
+            send_message(chat_id, f"دریافت شد: {text}")
 
         return jsonify(ok=True)
 
