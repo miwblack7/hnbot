@@ -31,6 +31,31 @@ def send_message_async(chat_id, text):
             logger.exception("Failed to send message: %s", e)
     Thread(target=task).start()
 
+# ارسال پیام با کلید شیشه‌ای
+def send_panel(chat_id):
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "❌ بستن", "callback_data": "close_panel"}
+            ]
+        ]
+    }
+    requests.post(
+        f"{TELEGRAM_API}/sendMessage",
+        json={
+            "chat_id": chat_id,
+            "text": "پنل مدیریت",
+            "reply_markup": keyboard
+        }
+    )
+
+# حذف پیام با callback
+def delete_message(chat_id, message_id):
+    requests.post(
+        f"{TELEGRAM_API}/deleteMessage",
+        json={"chat_id": chat_id, "message_id": message_id}
+    )
+    
 # ذخیره پیام‌های کاربران و بات
 user_messages = {}  # chat_id : {"user": [msg_id], "bot": [msg_id]}
 
@@ -106,7 +131,25 @@ def webhook():
 
         # ذخیره پیام کاربر
         store_message(chat_id, message_id, "user")
-    
+
+        if text == "پنل":
+            send_panel(chat_id)
+        else:
+            requests.post(
+                f"{TELEGRAM_API}/sendMessage",
+                json={"chat_id": chat_id, "text": f"دریافت شد: {text}"}
+            )
+
+    # callback از دکمه شیشه‌ای
+        if "callback_query" in update:
+            callback = update["callback_query"]
+            data = callback["data"]
+            chat_id = callback["message"]["chat"]["id"]
+            message_id = callback["message"]["message_id"]
+
+        if data == "close_panel":
+            delete_message(chat_id, message_id)
+            
         if text == "حذف پیام ها":
             delete_last_messages(chat_id, count=5)
             send_message_and_store(chat_id, "تمام پیام‌ها حذف شدند ✅")
