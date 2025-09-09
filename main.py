@@ -69,8 +69,7 @@ def webhook():
 
     if message:
         chat_id = message["chat"]["id"]
-        text = message.get("text", "")
-        reply_text = f"دریافت شد: {text}"
+        message_id = message["message_id"]
         text = message.get("text", "")
 
         # دستور حذف پیام ها
