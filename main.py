@@ -130,9 +130,11 @@ def webhook():
                 send_message(chat_id, f"دریافت شد: {text}")
 
         # callback از دکمه شیشه‌ای
-        if "callback_query" in update:
+        elif "callback_query" in update:
             callback = update["callback_query"]
-            data = callback["data"]
+            data = callback.get("data")
+            if not data:
+                return jsonify(ok=True)
             chat_id = callback["message"]["chat"]["id"]
             message_id = callback["message"]["message_id"]
 
