@@ -52,11 +52,13 @@ def send_panel(chat_id):
         ]
     }
     panel_text = "\n\n\n" + "پنل مدیریت" + "\n\n\n"  # چند خط خالی برای ایجاد فاصله
+    photo_url = "https://ibb.co/6RnvrnHT"  # لینک عکس
     try:
         resp = requests.post(
             f"{TELEGRAM_API}/sendMessage",
             json={
                 "chat_id": chat_id,
+                "photo": photo_url,
                 "text": panel_text,
                 "reply_markup": keyboard
             }
