@@ -62,10 +62,11 @@ def webhook():
     update = request.get_json(force=True, silent=True)
     logger.info("Received update: %s", update)
 
+    message = update.get("message")
+    
     if not message:
         return jsonify(ok=True)
 
-    message = update.get("message")
     if message:
         chat_id = message["chat"]["id"]
         text = message.get("text", "")
