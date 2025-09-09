@@ -47,9 +47,6 @@ def send_panel(chat_id):
     keyboard = {
         "inline_keyboard": [
             [{"text": "❌ بستن", "callback_data": "close_panel"}]
-        ],
-        "inline_keyboard": [
-            [{"text": "❌ بستن", "callback_data": "close_panel"}]
         ]
     }
     try:
