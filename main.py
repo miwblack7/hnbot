@@ -16,7 +16,7 @@ TOKEN = os.environ.get("TELEGRAM_TOKEN")
 if not TOKEN:
     raise RuntimeError("لطفاً متغیر محیطی TELEGRAM_TOKEN را ست کنید")
 
-SECRET = os.environ.get("WEBHOOK_SECRET", "changeme")
+SECRET = os.environ.get("WEBHOOK_SECRET")
 TELEGRAM_API = f"https://api.telegram.org/bot{TOKEN}"
 RENDER_URL = os.environ.get("RENDER_EXTERNAL_URL", "")
 
@@ -45,6 +45,9 @@ def send_message(chat_id, text):
 # ===== ارسال پنل با دکمه شیشه‌ای =====
 def send_panel(chat_id):
     keyboard = {
+        "inline_keyboard": [
+            [{"text": "❌ بستن", "callback_data": "close_panel"}]
+        ],
         "inline_keyboard": [
             [{"text": "❌ بستن", "callback_data": "close_panel"}]
         ]
