@@ -65,23 +65,15 @@ def webhook():
     if not message:
         return jsonify(ok=True)
 
-    chat_id = message["chat"]["id"]
-    message_id = message["message_id"]
-    text = message.get("text", "")
+    message = update.get("message")
+    if message:
+        chat_id = message["chat"]["id"]
+        chat_type = message["chat"]["type"]  # private / group / supergroup
+        text = message.get("text", "")
 
-    # اگر کاربر دستور "حذف پیام ها" را فرستاد
-    if text == "حذف پیام ها":
-        try:
-            # حذف پیام خود بات (اگر قبلاً پاسخ داده)
-            requests.post(
-                f"{TELEGRAM_API}/deleteMessage",
-                json={"chat_id": chat_id, "message_id": message_id}
-            )
-        except Exception as e:
-            logger.exception("Failed to delete message: %s", e)
-    else:
-        # پاسخ معمولی بات
-        send_message_async(chat_id, f"دریافت شد: {text}")
+        if chat_type == "private":  # فقط چت خصوصی
+            reply_text = f"سلام! شما گفتید: {text}"
+            send_message_async(chat_id, reply_text)
 
     return jsonify(ok=True)
 
