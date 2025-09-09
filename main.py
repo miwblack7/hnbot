@@ -140,12 +140,6 @@ def webhook():
                 json={"chat_id": chat_id, "text": f"دریافت شد: {text}"}
             )
 
-    # callback از دکمه شیشه‌ای
-        if "callback_query" in update:
-            callback = update["callback_query"]
-            data = callback["data"]
-            chat_id = callback["message"]["chat"]["id"]
-            message_id = callback["message"]["message_id"]
 
         if data == "close_panel":
             delete_message(chat_id, message_id)
