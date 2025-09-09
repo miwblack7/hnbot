@@ -31,37 +31,37 @@ def send_message_async(chat_id, text):
             logger.exception("Failed to send message: %s", e)
     Thread(target=task).start()
 
-# ذخیره پیام‌های ارسال شده بات (برای هر کاربر جدا)
-user_messages = {}  # chat_id : [message_id1, message_id2, ...]
+# ذخیره پیام‌های کاربران و بات
+user_messages = {}  # chat_id : {"user": [msg_id], "bot": [msg_id]}
 
-# ====== ارسال پیام آسنکرون و ذخیره ID ======
-def send_message(chat_id, text):
-    def task():
-        try:
-            resp = requests.post(
-                f"{TELEGRAM_API}/sendMessage",
-                json={"chat_id": chat_id, "text": text}
-            )
-            if resp.ok:
-                msg_id = resp.json()["result"]["message_id"]
-                user_messages.setdefault(chat_id, []).append(msg_id)
-        except Exception as e:
-            logger.exception("Failed to send message: %s", e)
-    Thread(target=task).start()
+def store_message(chat_id, msg_id, sender="bot"):
+    user_messages.setdefault(chat_id, {"user": [], "bot": []})
+    user_messages[chat_id][sender].append(msg_id)
 
-# ====== حذف آخرین n پیام بات ======
+def send_message_and_store(chat_id, text):
+    resp = requests.post(
+        f"{TELEGRAM_API}/sendMessage",
+        json={"chat_id": chat_id, "text": text}
+    )
+    if resp.ok:
+        msg_id = resp.json()["result"]["message_id"]
+        store_message(chat_id, msg_id, "bot")
+
 def delete_last_messages(chat_id, count=5):
-    last_msgs = user_messages.get(chat_id, [])[-count:]
-    for msg_id in last_msgs:
-        try:
-            requests.post(
-                f"{TELEGRAM_API}/deleteMessage",
-                json={"chat_id": chat_id, "message_id": msg_id}
-            )
-        except Exception as e:
-            logger.exception("Failed to delete message: %s", e)
-    # پاک کردن از لیست
-    user_messages[chat_id] = user_messages.get(chat_id, [])[:-count]
+    for sender in ["bot", "user"]:
+        last_msgs = user_messages.get(chat_id, {}).get(sender, [])[-count:]
+        for msg_id in last_msgs:
+            try:
+                requests.post(
+                    f"{TELEGRAM_API}/deleteMessage",
+                    json={"chat_id": chat_id, "message_id": msg_id}
+                )
+            except Exception as e:
+                logger.exception("Failed to delete message: %s", e)
+        # حذف از لیست
+        if user_messages.get(chat_id):
+            user_messages[chat_id][sender] = user_messages[chat_id][sender][:-count]
+
 
 # ====== تابع ریست وبهوک ======
 def reset_webhook():
@@ -104,11 +104,14 @@ def webhook():
         message_id = message["message_id"]
         text = message.get("text", "")
 
+        # ذخیره پیام کاربر
+        store_message(chat_id, message_id, "user")
+    
         if text == "حذف پیام ها":
             delete_last_messages(chat_id, count=5)
-            send_message(chat_id, "آخرین پیام‌ها حذف شدند ✅")
+            send_message_and_store(chat_id, "تمام پیام‌ها حذف شدند ✅")
         else:
-            send_message(chat_id, f"دریافت شد: {text}")
+            send_message_and_store(chat_id, f"دریافت شد: {text}")
 
         return jsonify(ok=True)
 
