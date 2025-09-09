@@ -62,17 +62,28 @@ def webhook():
     update = request.get_json(force=True, silent=True)
     logger.info("Received update: %s", update)
 
-    if not update:
-        return jsonify(ok=False), 400
+    if not message:
+        return jsonify(ok=True)
 
-    message = update.get("message")
-    if message:
-        chat_id = message["chat"]["id"]
-        text = message.get("text", "")
-        reply_text = f"دریافت شد: {text}"
-        send_message_async(chat_id, reply_text)
+    chat_id = message["chat"]["id"]
+    message_id = message["message_id"]
+    text = message.get("text", "")
 
-    return jsonify(ok=True)  # پاسخ فوری به تلگرام
+    # اگر کاربر دستور "حذف پیام ها" را فرستاد
+    if text == "حذف پیام ها":
+        try:
+            # حذف پیام خود بات (اگر قبلاً پاسخ داده)
+            requests.post(
+                f"{TELEGRAM_API}/deleteMessage",
+                json={"chat_id": chat_id, "message_id": message_id}
+            )
+        except Exception as e:
+            logger.exception("Failed to delete message: %s", e)
+    else:
+        # پاسخ معمولی بات
+        send_message_async(chat_id, f"دریافت شد: {text}")
+
+    return jsonify(ok=True)
 
 @app.route("/reset-webhook", methods=["POST"])
 def reset_webhook_route():
